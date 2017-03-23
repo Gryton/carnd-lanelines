@@ -5,6 +5,8 @@ import numpy as np
 import statistics
 import cv2
 import os
+from moviepy.editor import VideoFileClip
+from IPython.display import HTML
 
 import math
 
@@ -55,7 +57,7 @@ def region_of_interest(img, vertices):
     return masked_image
 
 
-def draw_lines(img, lines, color=[255, 0, 0], thickness=2):
+def draw_lines(img, lines, color=[255, 0, 0], thickness=3):
     """
     NOTE: this is the function you might want to use as a starting point once you want to
     average/extrapolate the line segments you detect to map out the full
@@ -87,10 +89,22 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=2):
                 else:
                     left_line.append(np.polyfit([x1,x2], [y1,y2], 1))
                     min_left_y.append(min(y1, y2))
-    right_line_avg = [statistics.mean([coef[::2][0] for coef in right_line]), statistics.mean([coef[1::2][0] for coef in right_line])]
-    min_right_y = min(min_right_y)
-    left_line_avg = [statistics.mean([coef[::2][0] for coef in left_line]), statistics.mean([coef[1::2][0] for coef in left_line])]
-    min_left_y = min(min_left_y)
+    right_line_avg = [statistics.mean([coef[::2][0] for coef in right_line]), statistics.mean([coef[1::2][0] for coef in right_line])] if [coef[::2][0] for coef in right_line] else None
+    min_right_y = min(min_right_y) if min_right_y else None
+    left_line_avg = [statistics.mean([coef[::2][0] for coef in left_line]), statistics.mean([coef[1::2][0] for coef in left_line])] if [coef[::2][0] for coef in left_line] else None
+    min_left_y = min(min_left_y) if min_left_y else None
+    if left_line_avg is not None and right_line_avg is not None:
+        for slope, intercept, min_y in [[left_line_avg[0], left_line_avg[1], min_left_y], [right_line_avg[0], right_line_avg[1], min_right_y]]:
+            cv2.line(img,
+                     (int((img.shape[0] - intercept) / slope), img.shape[0]),
+                     (int((min_y - intercept) / slope), min_y),
+                     color,
+                     thickness)
+    # cv2.line(img,
+    #          ( int((img.shape[0]-left_line_avg[1])/left_line_avg[0]), img.shape[0] ),
+    #          ( int((min_left_y-left_line_avg[1])/left_line_avg[0]), min_left_y ),
+    #          color,
+    #          thickness)
     # cv2.line(img, (x1, img.shape[] y1), (x2, y2), color, thickness)
 
 
@@ -199,28 +213,52 @@ def weighted_img(img, initial_img, α=0.8, β=1., λ=0.):
     return cv2.addWeighted(initial_img, α, img, β, λ)
 
 
-for filename in os.listdir("test_images/"):
-    image = mpimg.imread('test_images/' + filename)
-    plt.subplot(1, 2, 1)
-    plt.imshow(image)
+def process_image(image):
+    # NOTE: The output you return should be a color image (3 channel) for processing video below
+    # TODO: put your pipeline here,
+    # you should return the final output (image where lines are drawn on lanes)
     grayed = grayscale(image)
-    plt.subplot(1, 2, 2)
-    plt.imshow(grayed, cmap='gray')
     canned = canny(grayed, 40, 200)
-    plt.imshow(canned)
     masked = region_of_interest(canned, [
         np.array([[100, image.shape[0]], [470, 310], [500, 310], [image.shape[1], image.shape[0]]])])
-    plt.imshow(masked, cmap='gray')
-
     rho = 1
     theta = np.pi / 180
     threshold = 20
     min_line_length = 40
     max_line_gap = 10
-    # line_image = np.copy(image)*0 #creating a blank to draw lines on
-
     hough = hough_lines(masked, rho, theta, threshold, min_line_length, max_line_gap)
     weighted = weighted_img(hough, image)
     result = weighted
-    mpimg.imsave('test_images_output/' + filename, result)
-plt.imshow(hough)
+    return result
+
+
+white_output = 'test_videos_output/solidYellowLeft.mp4'
+clip1 = VideoFileClip("test_videos/solidYellowLeft.mp4")
+white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
+white_clip.write_videofile(white_output, audio=False)
+
+# for filename in os.listdir("test_images/"):
+#     image = mpimg.imread('test_images/' + filename)
+#     plt.subplot(1, 2, 1)
+#     plt.imshow(image)
+#     grayed = grayscale(image)
+#     plt.subplot(1, 2, 2)
+#     plt.imshow(grayed, cmap='gray')
+#     canned = canny(grayed, 40, 200)
+#     plt.imshow(canned)
+#     masked = region_of_interest(canned, [
+#         np.array([[100, image.shape[0]], [470, 310], [500, 310], [image.shape[1], image.shape[0]]])])
+#     plt.imshow(masked, cmap='gray')
+#
+#     rho = 1
+#     theta = np.pi / 180
+#     threshold = 20
+#     min_line_length = 40
+#     max_line_gap = 10
+#     # line_image = np.copy(image)*0 #creating a blank to draw lines on
+#
+#     hough = hough_lines(masked, rho, theta, threshold, min_line_length, max_line_gap)
+#     weighted = weighted_img(hough, image)
+#     result = weighted
+#     mpimg.imsave('test_images_output/' + filename, result)
+# plt.imshow(hough)
