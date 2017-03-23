@@ -1,5 +1,3 @@
-#**Finding Lane Lines on the Road**
-
 ---
 
 **Finding Lane Lines on the Road**
@@ -22,7 +20,7 @@ The goals / steps of this project are the following:
 
 ### Reflection
 
-###1. Describe your pipeline. As part of the description, explain how you modified the draw_lines() function.
+## Pipeline description
 
 My pipeline consisted of 5 steps. First, I converted the images to grayscale,
 ![alt text][image1]
@@ -50,7 +48,7 @@ If you'd like to include images to show how the pipeline works, here is how to i
 
 
 
-###2. Identify potential shortcomings with your current pipeline
+## Potential shortcomings with current pipeline
 
 
 One potential shortcoming would be what would happen when car drives through the curve - I assume that right line goes
@@ -59,7 +57,7 @@ from right to left, and when we are in right curve it's not so obvious.
 Another shortcoming could be if we drive through lane that's really wide, it could go of the ROI.
 
 
-###3. Suggest possible improvements to your pipeline
+## Possible improvements to pipeline
 
 A possible improvement would be to consider another algorithm for drawing line - I assume it's linear, but maybe better
 would be to make e.g. a spline, that will allow to draw lines from few parts, that aren't in the same direction.
